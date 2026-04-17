@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Educación en Diabetes</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .chat-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 70vh; /* Ajusta la altura máxima para el scroll */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #e0e7ff; /* Indigo 100 */
+            color: #3730a3; /* Indigo 700 */
+            border-bottom-right-radius: 5px;
+        }
+        .assistant-message {
+            align-self: flex-start;
+            background-color: #d1fae5; /* Green 100 */
+            color: #065f46; /* Green 800 */
+            border-bottom-left-radius: 5px;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            gap: 10px;
+        }
+        .chat-input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .chat-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .send-button {
+            background-color: #6366f1; /* Indigo 500 */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .send-button:hover {
+            background-color: #4f46e5; /* Indigo 600 */
+        }
+        .send-button:disabled {
+            background-color: #a5b4fc; /* Indigo 300 */
+            cursor: not-allowed;
+        }
+        .loading-indicator {
+            text-align: center;
+            padding: 10px;
+            font-style: italic;
+            color: #6b7280; /* Gray 500 */
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Asistente de Educación en Diabetes
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="assistant-message message">
+                ¡Hola! Soy tu asistente para planificar actividades educativas. Puedes preguntarme cómo planificar actividades educativas sobre los Aspectos clave del automanejo de su condición de personas con diabetes tipo 1.
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" class="chat-input" placeholder="Escribe tu pregunta aquí...">
+            <button id="send-button" class="send-button">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const API_ENDPOINT = 'https://asistente-para-educadores-en-diabetes.onrender.com/ask'; 
+
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const question = userInput.value.trim();
+            if (!question) return;
+
+            // Mostrar mensaje del usuario
+            appendMessage(question, 'user-message');
+            userInput.value = '';
+            sendButton.disabled = true; // Deshabilitar botón mientras se espera respuesta
+
+            // Mostrar indicador de carga
+            const loadingMessage = appendMessage('Escribiendo...', 'assistant-message loading-indicator');
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                // Eliminar indicador de carga
+                chatMessages.removeChild(loadingMessage);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.response || `Error del servidor: ${response.status}`);
+                }
+
+                const data = await response.json();
+                appendMessage(data.response, 'assistant-message');
+
+            } catch (error) {
+                console.error('Error al conectar con el asistente:', error);
+                // Eliminar indicador de carga si hubo un error
+                if (loadingMessage && chatMessages.contains(loadingMessage)) {
+                    chatMessages.removeChild(loadingMessage);
+                }
+                appendMessage('Lo siento, hubo un error al conectar con el asistente. Por favor, inténtalo de nuevo más tarde.', 'assistant-message');
+            } finally {
+                sendButton.disabled = false; // Habilitar botón de nuevo
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Desplazar al final
+            }
+        }
+
+        function appendMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message'); // Añade 'message' primero
+            // Divide la cadena 'type' por espacios y añade cada clase individualmente
+            type.split(' ').forEach(cls => messageDiv.classList.add(cls)); // FIX CLAVE AQUÍ
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Desplazar al final
+            return messageDiv; // Devolver el elemento para poder eliminarlo si es un indicador de carga
+        }
+    </script>
+</body>
+</html>
