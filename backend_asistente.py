@@ -77,7 +77,7 @@ def run_setup():
         )
 
         # Configuración RAG
-        llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2)
+        llm = ChatGoogleGenerativeAI(model="models/gemini-embedding-001", temperature=0.2)
         
         template = """Eres un profesor de la Universidad Central de Venezuela (UCV).
         Usa el contexto educativo proporcionado para responder.
