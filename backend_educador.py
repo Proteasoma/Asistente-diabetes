@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 # LangChain & RAG
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import FastEmbedEmbeddings
 from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -151,11 +151,10 @@ def inicializar_vector_db():
         chunks = splitter.split_documents(docs)
         print(f"✓ {len(chunks)} fragmentos generados")
         
-        print("🧠 Generando embeddings locales...")
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-            model_kwargs={'device': 'cpu'}
-        )
+        print("Generando embeddings con FastEmbed (ligero y compatible)...")
+        from langchain_community.embeddings import FastEmbedEmbeddings
+        embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+        print("✅ Modelo de embeddings cargado correctamente")
         
         persist_dir = base_dir / "vector_db"
         vector_db = Chroma.from_documents(
