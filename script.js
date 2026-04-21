@@ -4,7 +4,7 @@
  */
 
 // ⚠️ CONFIGURACIÓN: Cambia esta URL por la de tu servicio en Render/Railway
-const API_BASE_URL = "https://asistente-diabetes.onrender.com"; // ← REEMPLAZA ESTO
+const API_BASE_URL = "https://asistente-diabetes-v2yz.onrender.com"; // ← REEMPLAZA ESTO
 
 // Elementos del DOM
 const chatForm = document.getElementById("chatForm");
